@@ -2,8 +2,13 @@
 
 namespace OlesKashchenko\LarOAuth\Providers;
 
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Config,
+    Illuminate\Support\Facades\URL,
+    Illuminate\Support\Facades\Session,
+    Illuminate\Support\Facades\Redirect,
+    Illuminate\Support\Facades\Input,
+    Illuminate\Support\Facades\DB;
+
 use Cartalyst\Sentry\Facades\Laravel\Sentry;
 
 class VkProvider
@@ -13,8 +18,6 @@ class VkProvider
     private $profileDataUrl;
     private $clientId;
     private $clientKey;
-    private $redirectUrl;
-    private $redirectAccessTokenUrl;
     private $handleUrl;
     private $idFieldName;
 
@@ -25,9 +28,7 @@ class VkProvider
         $this->profileDataUrl = Config::get('lar-oauth::vk.profile_data_url');
         $this->clientId = Config::get('lar-oauth::vk.api_id');
         $this->clientKey = Config::get('lar-oauth::vk.secret_key');
-        $this->redirectUrl = Config::get('lar-oauth::vk.redirect_request_url');
         $this->handleUrl = Config::get('lar-oauth::vk.redirect_handle_url');
-        $this->redirectAccessTokenUrl = Config::get('lar-oauth::vk.redirect_access_token_url');
         $this->idFieldName = Config::get('lar-oauth::vk.id_field_name');
 
         Session::put('url_previous', URL::previous());
@@ -46,8 +47,8 @@ class VkProvider
             $accessTokenUrl = $this->accessTokenUrl . '?' . $this->getAccessTokenParams(Input::get("code"));
             $accessTokenData = $this->doCurlRequest($accessTokenUrl);
 
-            if (isset($data['access_token'])) {
-                $profileDataUrl = $this->profileDataUrl . '?' . $this->getProfileDataParams($data);
+            if (isset($accessTokenData['access_token'])) {
+                $profileDataUrl = $this->profileDataUrl . '?' . $this->getProfileDataParams($accessTokenData);
                 $profileData = $this->getProfileData($profileDataUrl);
 
                 $firstName = $profileData['response'][0]['first_name'];
@@ -92,7 +93,7 @@ class VkProvider
             'client_id'     => $this->clientId,
             'scope'         => 'friends,photos,offline',
             'display'       => 'popup',
-            'redirect_uri'  => $this->redirectUrl
+            'redirect_uri'  => $this->handleUrl
         );
 
         return http_build_query($params);
@@ -104,7 +105,7 @@ class VkProvider
             'client_id'     => $this->clientId,
             'client_secret' => $this->clientKey,
             'code'          => $code,
-            'redirect_uri'  => $this->redirectAccessTokenUrl
+            'redirect_uri'  => $this->handleUrl
         );
 
         return http_build_query($params);

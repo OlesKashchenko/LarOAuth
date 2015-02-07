@@ -3,7 +3,6 @@
 namespace OlesKashchenko\LarOAuth;
 
 use Illuminate\Support\ServiceProvider;
-use OlesKashchenko\LarOAuth\Facades\LarOAuth;
 
 class LarOAuthServiceProvider extends ServiceProvider {
 

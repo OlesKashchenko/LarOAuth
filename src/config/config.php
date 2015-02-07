@@ -5,10 +5,8 @@ return array(
     //create account https://vk.com/editapp?act=create
 
     'vk' => array(
-        "status"                    => true,
-
-        "api_id"                    => "4764874",
-        "secret_key"                => "Evj3X6QJBtQkgbYfCnth",
+        "api_id"                    => "4766979",
+        "secret_key"                => "2DKiMgJEMmfmmTb9Ty4L",
 
         "oauth_url"                 => "http://api.vk.com/oauth/authorize",
         "oauth_access_token_url"    => "https://oauth.vk.com/access_token",
@@ -16,7 +14,6 @@ return array(
 
         "redirect_request_url"      => URL::to('/') . "/oauth/request",
         "redirect_handle_url"       => URL::to('/') . "/oauth/handle",
-        "redirect_access_token_url" => URL::to('/') . "/oauth/access-token-handle",
 
         "remember"                  => false,
 
