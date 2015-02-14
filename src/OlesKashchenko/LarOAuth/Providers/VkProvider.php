@@ -11,27 +11,22 @@ use Illuminate\Support\Facades\Config,
 
 use Cartalyst\Sentry\Facades\Laravel\Sentry;
 
-class VkProvider
+class VkProvider extends SocialProvider
 {
-    private $oauthUrl;
-    private $accessTokenUrl;
-    private $profileDataUrl;
-    private $clientId;
-    private $clientKey;
-    private $handleUrl;
-    private $idFieldName;
 
     public function __construct()
     {
+        parent::__construct();
+
         $this->oauthUrl = Config::get('lar-oauth::vk.oauth_url');
         $this->accessTokenUrl = Config::get('lar-oauth::vk.oauth_access_token_url');
         $this->profileDataUrl = Config::get('lar-oauth::vk.profile_data_url');
         $this->clientId = Config::get('lar-oauth::vk.api_id');
         $this->clientKey = Config::get('lar-oauth::vk.secret_key');
         $this->handleUrl = Config::get('lar-oauth::vk.redirect_handle_url');
+        $this->emailPostfix = Config::get('lar-oauth::vk.email_postfix');
+        $this->rememberMe = Config::get('lar-oauth::vk.remember');
         $this->idFieldName = Config::get('lar-oauth::vk.id_field_name');
-
-        Session::put('url_previous', URL::previous());
     }
 
     public function sendLoginRequest()
@@ -44,12 +39,10 @@ class VkProvider
     public function handleLogin()
     {
         if (Input::get("code")) {
-            $accessTokenUrl = $this->accessTokenUrl . '?' . $this->getAccessTokenParams(Input::get("code"));
-            $accessTokenData = $this->doCurlRequest($accessTokenUrl);
+            $accessTokenData = $this->getAccessTokenData(Input::get("code"));
 
             if (isset($accessTokenData['access_token'])) {
-                $profileDataUrl = $this->profileDataUrl . '?' . $this->getProfileDataParams($accessTokenData);
-                $profileData = $this->getProfileData($profileDataUrl);
+                $profileData = $this->getProfileData($accessTokenData);
 
                 $firstName = $profileData['response'][0]['first_name'];
                 $lastName = $profileData['response'][0]['last_name'];
@@ -64,12 +57,12 @@ class VkProvider
                     $password = str_random(6);
 
                     $user = Sentry::register(array(
-                        'email'         => $email ? : $idUser . '@vk.com',
-                        'password'      => $password,
-                        'id_vk'         => $idUser,
-                        'activated'     => 1,
-                        'first_name'    => $firstName,
-                        'last_name'     => $lastName
+                        $this->emailFieldName       => $email ? : $idUser . '@' . $this->emailPostfix,
+                        $this->passwordFieldName    => $password,
+                        $this->idFieldName          => $idUser,
+                        $this->activatedFieldName   => 1,
+                        $this->firstNameFieldName   => $firstName,
+                        $this->lastNameFieldName    => $lastName
                     ));
 
                     $userAuth = Sentry::findUserById($user->id);
@@ -77,17 +70,17 @@ class VkProvider
                     $userAuth = Sentry::findUserById($existedUser['id']);
                 }
 
-                Sentry::login($userAuth, Config::get('auth-soc::config.vk.remember'));
+                Sentry::login($userAuth, $this->rememberMe);
 
-                $redirect = Session::get('url_previous', "/");
+                $redirectUrl = Session::get('url_previous', "/");
                 Session::forget('url_previous');
 
-                return Redirect::to($redirect);
+                return Redirect::to($redirectUrl);
             }
         }
     }
 
-    private function getRequestParams()
+    protected function getRequestParams()
     {
         $params = array(
             'client_id'     => $this->clientId,
@@ -99,7 +92,7 @@ class VkProvider
         return http_build_query($params);
     }
 
-    private function getAccessTokenParams($code)
+    protected function getAccessTokenParams($code)
     {
         $params = array(
             'client_id'     => $this->clientId,
@@ -111,31 +104,28 @@ class VkProvider
         return http_build_query($params);
     }
 
-    private function doCurlRequest($url)
+    protected function getAccessTokenData($code)
     {
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $accessTokenUrl = $this->accessTokenUrl . '?' . $this->getAccessTokenParams($code);
+        $accessTokenResponse = file_get_contents($accessTokenUrl);
 
-        $result = curl_exec($ch);
-
-        curl_close($ch);
-
-        return json_decode($result, true);
+        return json_decode($accessTokenResponse, true);
     }
 
-    private function getProfileDataParams($data)
+    protected function getProfileDataParams(array $accessTokenData)
     {
         $params = array(
-            'uid'           => $data['user_id'],
+            'uid'           => $accessTokenData['user_id'],
             'fields'        => 'photo_big',
-            'access_token'  => $data['access_token']
+            'access_token'  => $accessTokenData['access_token']
         );
 
         return http_build_query($params);
     }
 
-    private function getProfileData($profileDataUrl)
+    protected function getProfileData(array $accessTokenData)
     {
+        $profileDataUrl = $this->profileDataUrl . '?' . $this->getProfileDataParams($accessTokenData);
         $profileResponse = file_get_contents($profileDataUrl);
 
         return json_decode($profileResponse, true);
