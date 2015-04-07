@@ -57,7 +57,15 @@ class FbProvider extends SocialProvider
                     $email = $profileData['email'];
                 }
 
-                $existedUser = DB::table("users")->where($this->idFieldName, $idUser)->first();
+                if ($email) {
+                    $existedUser = DB::table("users")->where($this->emailFieldName, $email)->first();
+                } else {
+                    $existedUser = DB::table("users")
+                        ->where($this->emailFieldName, $idUser . '@' . $this->emailPostfix)
+                        ->where($this->idFieldName, $idUser)
+                        ->first();
+                }
+
                 if (!$existedUser) {
                     $password = str_random(6);
 
@@ -81,7 +89,12 @@ class FbProvider extends SocialProvider
                 Session::forget('url_previous');
 
                 return Redirect::to($redirectUrl);
+            } else {
+                return Redirect::to('/');
             }
+
+        } else {
+            return Redirect::to('/');
         }
     }
 

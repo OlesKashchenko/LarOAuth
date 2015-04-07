@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Config,
     Illuminate\Support\Facades\Input,
     Illuminate\Support\Facades\DB;
 
-use Cartalyst\Sentry\Facades\Laravel\Sentry;
-
 class VkProvider extends SocialProvider
 {
 
@@ -51,7 +49,7 @@ class VkProvider extends SocialProvider
                 if (isset($profileData['response'][0]['email'])) {
                     $email = $profileData['response'][0]['email'];
                 }
-
+                
                 $existedUser = DB::table("users")->where($this->idFieldName, $idUser)->first();
                 if (!$existedUser) {
                     $password = str_random(6);
@@ -76,6 +74,9 @@ class VkProvider extends SocialProvider
                 Session::forget('url_previous');
 
                 return Redirect::to($redirectUrl);
+
+            } else {
+                return Redirect::to('/');
             }
         }
     }

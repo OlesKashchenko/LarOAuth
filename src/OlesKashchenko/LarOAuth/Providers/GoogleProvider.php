@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Config,
     Illuminate\Support\Facades\Input,
     Illuminate\Support\Facades\DB;
 
-use Cartalyst\Sentry\Facades\Laravel\Sentry;
-
 class GoogleProvider extends SocialProvider
 {
 
@@ -51,7 +49,7 @@ class GoogleProvider extends SocialProvider
                     $email = $profileData['email'];
                 }
 
-                $existedUser = DB::table("users")->where('email', 'like', $email)->first();
+                $existedUser = DB::table("users")->where($this->emailFieldName, $email)->first();
                 if (!$existedUser) {
                     $password = str_random(6);
 
@@ -74,6 +72,9 @@ class GoogleProvider extends SocialProvider
                 Session::forget('url_previous');
 
                 return Redirect::to($redirectUrl);
+
+            } else {
+                return Redirect::to('/');
             }
         }
     }
