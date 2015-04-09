@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Config,
     Illuminate\Support\Facades\Input,
     Illuminate\Support\Facades\DB;
 
+use Cartalyst\Sentry\Facades\Laravel\Sentry;
+
 class GoogleProvider extends SocialProvider
 {
 
