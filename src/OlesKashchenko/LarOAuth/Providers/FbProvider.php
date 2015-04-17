@@ -84,6 +84,9 @@ class FbProvider extends SocialProvider
                 }
 
                 Sentry::login($userAuth, $this->rememberMe);
+                
+                $callback = Config::get('lar-oauth::callback');
+                $callback($userAuth);
 
                 $redirectUrl = Session::get('url_previous', "/");
                 Session::forget('url_previous');
