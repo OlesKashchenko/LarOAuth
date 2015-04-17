@@ -51,4 +51,8 @@ return array(
         'password_field_name'      => 'password',
         'activated_field_name'     => 'activated'
     ),
+    
+    'callback' => function($user) {
+        
+    },
 );
